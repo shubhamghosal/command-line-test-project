@@ -170,9 +170,11 @@ function cmdtest () {
                     esac
                 else
                     echo "Incorrect Password! Please enter the correct password."
+                    cmdtest
                 fi
             else
                 echo "Incorrect Username! Please enter correct username"
+                cmdtest
             fi
             ;;
         3)
