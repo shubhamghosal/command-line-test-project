@@ -50,7 +50,6 @@ function cmdtest () {
 
             if [ $flag -eq 1 ]
             then
-                echo $user >> user.csv
                 echo "Enter your password: "
                 read -s pass1
                 echo "Confirm your password: "
@@ -58,10 +57,12 @@ function cmdtest () {
 
                 if [ $pass1 = $pass2 ]
                 then
+                    echo $user >> user.csv
                     echo $pass2 | base64 >> password.csv
                     echo "User registration succesfull!!!"
                 else
                     echo "Password mismatch! Please enter correct password"
+                    cmdtest
                 fi
 
             else
