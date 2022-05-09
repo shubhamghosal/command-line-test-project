@@ -150,25 +150,25 @@ function cmdtest () {
                                 for i in `seq 5 5 $qbank_lines`                # loop to display the detailed report card to the user after exam
                                 do
                                     cat questionbank.txt | head -$i | tail -5 >> reportcard.txt
-                                    if [ ${result[$k]} = "correct" ]                                                     # display if answer is correct in green
+                                    if [ ${result[$k]} = "correct" ]                                                     # store if answer is correct in green
                                     then
                                         echo -e "\e[32mCorrect Answer!" >> reportcard.txt
                                         echo -e "\e[32mOption Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}" >> reportcard.txt
-                                    elif [ ${result[$k]} = "wrong" ]                                                     # display if answer is wrong in red
+                                    elif [ ${result[$k]} = "wrong" ]                                                     # store if answer is wrong in red
                                     then
                                         echo -e "\e[31mWrong Answer!"  >> reportcard.txt
                                         echo -ne "\e[31mOption Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}, " >> reportcard.txt
                                         echo -e "\e[31mCorrect Option: ${crrt_ans[`echo "$i / 5 - 1" | bc`]}" >> reportcard.txt
                                     else
-                                        echo -e "\e[33mTimeout!" >> reportcard.txt                                        # display if timeout in yellow
+                                        echo -e "\e[33mTimeout!" >> reportcard.txt                                        # store if timeout in yellow
                                     fi
                                     k=$(($k+1))
                                     echo -e "\e[0m--------------------" >> reportcard.txt
                                 done
-                                echo "Total Correct Answers: $count out of $uans_len"  >> reportcard.txt                   # display total correct answers by user
+                                echo "Total Correct Answers: $count out of $uans_len"  >> reportcard.txt                   # store total correct answers by user
                                 echo "--------------------" >> reportcard.txt
                                 echo "NOTE: Press q to exit this report card" >> reportcard.txt
-                                less -R reportcard.txt
+                                less -R reportcard.txt                                                          # display entire scrollable report card in color codes
                                 rm user_answer.txt
                                 rm result.txt
                                 rm reportcard.txt
@@ -177,6 +177,9 @@ function cmdtest () {
                                 echo "You are logged out!!!"
                                 check=0
                                 cmdtest
+                                ;;
+                            *)
+                                echo "Invalid option selected"                            # default case if invalid option is selected
                                 ;;                                
                         esac
                     done
