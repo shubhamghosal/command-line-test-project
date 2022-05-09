@@ -63,13 +63,11 @@ function cmdtest () {
                     echo "User registration succesfull!!!"
                 else
                     echo "Password mismatch! Please enter correct password"   # check for password mismatch & return to start menu
-                    cmdtest
                 fi
-
             else
                 echo "The $user username is already present"                  # check if user is available & return to start menu
-                cmdtest
             fi
+            cmdtest
             ;;
         2)                                                             # case option if user selects to sign in and proceed for the test
             read -p "Enter the username: " user                        # read the username
@@ -93,83 +91,95 @@ function cmdtest () {
 
                 if [ $pass1 = `echo ${pass[$index]} | base64 --decode` ]    # check if correct password is entered after decoding it from password.csv file
                 then
+                    check=1
                     echo "Password Matched."
                     echo "Signed in successfully!!!"
-                    echo "-----Hello $user!-------"                         # print test taking menu after succesfull login
-                    echo "1. Take Test"
-                    echo "2. Exit / Logout"
-                    read -p "Choose your option: " opt                      # choose the option to start test or logout
+                    while [ $check -eq 1 ]                                      # loop to iterate through login menu till it is logged out
+                    do
+                        echo "-----Hello $user!-------"                         # print test taking menu after succesfull login
+                        echo "1. Take Test"
+                        echo "2. Exit / Logout"
+                        read -p "Choose your option: " opt                      # choose the option to start test or logout
 
-                    case $opt in 
-                        1)                                                  # case option to start the test
-                            qbank_lines=`cat questionbank.txt | wc -l`      # store number of lines in question bank file
-                            for i in `seq 5 5 $qbank_lines`                 # loop to iterate through the question set each of five lines
-                            do
-                                cat questionbank.txt | head -$i | tail -5   # display the question
-                                for j in `seq 10 -1 1`                      # loop to iterate 10 times in reverse
+                        case $opt in 
+                            1)                                                  # case option to start the test
+                                qbank_lines=`cat questionbank.txt | wc -l`      # store number of lines in question bank file
+                                for i in `seq 5 5 $qbank_lines`                 # loop to iterate through the question set each of five lines
                                 do
-                                    echo -e "\r Enter the choice :$j \c"    # intializing 10 second counter for user to provide the option
-                                    read -t 1 option
+                                    clear
+                                    cat questionbank.txt | head -$i | tail -5   # display the question
+                                    for j in `seq 10 -1 1`                      # loop to iterate 10 times in reverse
+                                    do
+                                        echo -e "\r Enter the choice :\e[31m$j \e[0m \c"    # intializing 10 second counter for user to provide the option
 
-                                    if [ -z "$option" ]                     # check if no option is selection means timeout
+                                        read -t 1 option
+
+                                        if [ -z "$option" ]                     # check if no option is selection means timeout
+                                        then
+                                            option="e"
+                                        else
+                                            break                               # else break the inner loop
+                                        fi
+                                    done
+                                    echo $option >> user_answer.txt             # store option in a temporary file
+                                    echo "-------------------------"
+                                done
+                                clear          
+                                user_ans=(`cat user_answer.txt`)                # store user selected option in an array
+                                crrt_ans=(`cat correctanswer.txt`)              # store all the correct answers in an array
+                                uans_len=${#user_ans[@]}
+                                count=0
+                                for i in `seq 0 $(($uans_len-1))`               # loop to check and compare the correct answers ans store in result.txt file
+                                do
+                                    if [ ${user_ans[$i]} = ${crrt_ans[$i]} ]
                                     then
-                                        option="e"
+                                        echo "correct" >> result.txt
+                                        count=$(($count+1))
+                                    elif [ ${user_ans[$i]} = "e" ]
+                                    then
+                                        echo "timeout" >> result.txt
                                     else
-                                        break                               # else break the inner loop
+                                        echo "wrong" >> result.txt
                                     fi
                                 done
-                                echo $option >> user_answer.txt             # store option in a temporary file
-                                echo "-------------------------"
-                            done          
-                            user_ans=(`cat user_answer.txt`)                # store user selected option in an array
-                            crrt_ans=(`cat correctanswer.txt`)              # store all the correct answers in an array
-                            uans_len=${#user_ans[@]}
-                            count=0
-                            for i in `seq 0 $(($uans_len-1))`               # loop to check and compare the correct answers ans store in result.txt file
-                            do
-                                if [ ${user_ans[$i]} = ${crrt_ans[$i]} ]
-                                then
-                                    echo "correct" >> result.txt
-                                    count=$(($count+1))
-                                elif [ ${user_ans[$i]} = "e" ]
-                                then
-                                    echo "timeout" >> result.txt
-                                else
-                                    echo "wrong" >> result.txt
-                                fi
-                            done
-                            echo "-----------------------------------"
-                            echo "          Report Card              "
-                            echo "-----------------------------------"
-                            k=0
-                            result=(`cat result.txt`)                      # store contents of result.txt file in an array
-                            for i in `seq 5 5 $qbank_lines`                # loop to display the detailed report card to the user after exam
-                            do
-                                cat questionbank.txt | head -$i | tail -5
-                                if [ ${result[$k]} = "correct" ]                                        # display if answer is correct in green
-                                then
-                                    echo -e "\e[32mCorrect Answer!"
-                                    echo "Option Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}"
-                                elif [ ${result[$k]} = "wrong" ]                                        # display if answer is wrong in red
-                                then
-                                    echo -e "\e[31mWrong Answer!"
-                                    echo -n "Option Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}, "
-                                    echo "Correct Option: ${crrt_ans[`echo "$i / 5 - 1" | bc`]}"
-                                else
-                                    echo -e "\e[33mTimeout!"                                            # display if timeout in yellow
-                                fi
-                                k=$(($k+1))
-                                echo -e "\e[0m------------------"
-                            done
-                            echo "Total Correct Answers: $count out of $uans_len"                      # display total correct answers by user
-                            rm user_answer.txt
-                            rm result.txt
-                            ;;
-                        2)                                                             # case option if user selects to logout from test taking menu
-                            echo "You are logged out!!!"
-                            cmdtest
-                            ;;                                
-                    esac
+                                echo "-----------------------------------" >> reportcard.txt
+                                echo "          Report Card              " >> reportcard.txt
+                                echo "-----------------------------------" >> reportcard.txt
+                                k=0
+                                result=(`cat result.txt`)                      # store contents of result.txt file in an array
+                                for i in `seq 5 5 $qbank_lines`                # loop to display the detailed report card to the user after exam
+                                do
+                                    cat questionbank.txt | head -$i | tail -5 >> reportcard.txt
+                                    if [ ${result[$k]} = "correct" ]                                                     # display if answer is correct in green
+                                    then
+                                        echo -e "\e[32mCorrect Answer!" >> reportcard.txt
+                                        echo -e "\e[32mOption Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}" >> reportcard.txt
+                                    elif [ ${result[$k]} = "wrong" ]                                                     # display if answer is wrong in red
+                                    then
+                                        echo -e "\e[31mWrong Answer!"  >> reportcard.txt
+                                        echo -ne "\e[31mOption Selected: ${user_ans[`echo "$i / 5 - 1" | bc`]}, " >> reportcard.txt
+                                        echo -e "\e[31mCorrect Option: ${crrt_ans[`echo "$i / 5 - 1" | bc`]}" >> reportcard.txt
+                                    else
+                                        echo -e "\e[33mTimeout!" >> reportcard.txt                                        # display if timeout in yellow
+                                    fi
+                                    k=$(($k+1))
+                                    echo -e "\e[0m--------------------" >> reportcard.txt
+                                done
+                                echo "Total Correct Answers: $count out of $uans_len"  >> reportcard.txt                   # display total correct answers by user
+                                echo "--------------------" >> reportcard.txt
+                                echo "NOTE: Press q to exit this report card" >> reportcard.txt
+                                less -R reportcard.txt
+                                rm user_answer.txt
+                                rm result.txt
+                                rm reportcard.txt
+                                ;;
+                            2)                                                             # case option if user selects to logout from test taking menu
+                                echo "You are logged out!!!"
+                                check=0
+                                cmdtest
+                                ;;                                
+                        esac
+                    done
                 else
                     echo "Incorrect Password! Please enter the correct password."     # check if password given is incorrect then return back to main menu
                     cmdtest
@@ -181,6 +191,10 @@ function cmdtest () {
             ;;
         3)                                                  # case option from main menu if user selects to make a final exit from it
             echo "Goodbye! Have a nice day"
+            ;;
+        *)
+            echo "Invalid Choice Selected"
+            cmdtest
             ;;
     esac
 }
